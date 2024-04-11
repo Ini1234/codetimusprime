@@ -35,12 +35,30 @@
 				border-radius: 4px;
 				cursor: pointer;
 				margin-top: 15px;
+				margin-right: 10px;
 			}
 
 			#output {
 				margin-top: 20px;
 				font-size: 18px;
 				word-wrap: break-word;
+			}
+
+			ul {
+				list-style: none;
+				padding: 0;
+				margin-top: 20px;
+			}
+
+			li {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			li button {
+				background-color: #f44336;
+				margin-left: 10px;
 			}
 		</style>
 	</head>
@@ -51,47 +69,66 @@
 				<label for="wordCount">Enter number of words:</label>
 				<input type="number" id="wordCount" min="1" value="5" />
 			</div>
-			<button onclick="generateSentence()">Generate</button>
+			<button onclick="generateSentence()">Generate Sentence</button>
+			<button onclick="saveSentence()">Add Sentence</button>
+			<button onclick="downloadSentence()">Download Sentence</button>
 			<p id="output"></p>
+			<ul id="savedSentences"></ul>
 		</div>
 
 		<script>
-			// A basic array of words to use for sentence generation
-			const words = [
-				"apple",
-				"banana",
-				"run",
-				"jump",
-				"quickly",
-				"slowly",
-				"blue",
-				"happy",
-				"sad",
-				"computer",
-				"keyboard",
-				"code",
-				"internet",
-				"website",
-				"friend",
-				"family",
-				"love",
-				"travel",
-				"adventure",
-			];
+			const apiUrl =
+				"https://free-random-word-generator-api.p.rapidapi.com/random-word";
 
-			function generateSentence() {
+			async function generateSentence() {
 				const wordCount = parseInt(document.getElementById("wordCount").value);
 
 				if (wordCount >= 1) {
-					let sentence = "";
-					for (let i = 0; i < wordCount; i++) {
-						const randomIndex = Math.floor(Math.random() * words.length);
-						sentence += words[randomIndex] + " ";
+					try {
+						const response = await fetch(
+							`https://random-word-api.herokuapp.com/word?number=${wordCount}`
+						);
+						const words = await response.json();
+
+						let sentence = words.join(" ");
+						document.getElementById("output").textContent = sentence;
+					} catch (error) {
+						console.error("Error fetching words:", error);
+						document.getElementById("output").textContent =
+							"Failed to fetch words from API.";
 					}
-					document.getElementById("output").textContent = sentence.trim();
 				} else {
 					document.getElementById("output").textContent =
 						"Please enter a number of words greater than or equal to 1.";
+				}
+			}
+			function saveSentence() {
+				const sentence = document.getElementById("output").textContent;
+				if (sentence) {
+					const listItem = document.createElement("li");
+					listItem.textContent = sentence;
+
+					// Add remove button
+					const removeButton = document.createElement("button");
+					removeButton.textContent = "Remove Sentence";
+					removeButton.onclick = () => {
+						listItem.remove();
+					};
+					listItem.appendChild(removeButton);
+
+					document.getElementById("savedSentences").appendChild(listItem);
+					document.getElementById("output").textContent = "";
+				}
+			}
+			function downloadSentence() {
+				const sentence = document.getElementById("output").textContent;
+				console.log("sentence: ", sentence);
+				if (sentence) {
+					const blob = new Blob([sentence], { type: "text/plain" });
+					const link = document.createElement("a");
+					link.href = URL.createObjectURL(blob);
+					link.download = "generated_sentence.txt";
+					link.click();
 				}
 			}
 		</script>
